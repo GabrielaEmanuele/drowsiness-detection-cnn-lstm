@@ -25,55 +25,34 @@ EARLY_STOP_PATIENCE = 5
 
 
 def get_video_id_from_path(path: Path) -> int:
-    """
-    Extrai o ID numérico do vídeo a partir do nome do arquivo .pt.
-
-    Exemplo:
-    Fold1_part1_01_0_seq0000.pt
-    name = "Fold1_part1_01_0_seq0000"
-    parts = ['Fold1', 'part1', '01', '0', 'seq0000'] -> video_id = 1
-    """
     name = path.stem
     parts = name.split("_")
     if len(parts) < 3:
         raise ValueError(f"Nome inesperado de arquivo: {name}")
-    video_str = parts[2]  # "01", "02", ...
+    video_str = parts[2] 
     return int(video_str.lstrip("0") or "0")
 
 
 class FeatureSequenceDataset(Dataset):
-    """
-    Dataset para usar sequences.npy (features EAR, MAR, etc).
-    Cada amostra: (seq_len, n_features), label
-    """
-
     def __init__(self, seq_path: Path, labels_path: Path):
         if not seq_path.is_file() or not labels_path.is_file():
             raise FileNotFoundError(f"Arquivos {seq_path} ou {labels_path} não encontrados.")
-        self.sequences = np.load(seq_path)  # (N, seq_len, n_features)
-        self.labels = np.load(labels_path)  # (N,)
+        self.sequences = np.load(seq_path) 
+        self.labels = np.load(labels_path)  
         assert len(self.sequences) == len(self.labels), "Seqs e labels com tamanhos diferentes"
 
     def __len__(self):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        x = self.sequences[idx]  # (seq_len, n_features)
-        y = self.labels[idx]     # scalar
+        x = self.sequences[idx]
+        y = self.labels[idx]    
         x = torch.tensor(x, dtype=torch.float32)
         y = torch.tensor(y, dtype=torch.long)
         return x, y
 
 
 class ImageSequenceDataset(Dataset):
-    """
-    Dataset para usar sequences_img/*.pt (sequências de frames 64x64).
-    Cada amostra: (seq_len, 1, 64, 64), label
-
-    Se allowed_video_ids for passado, só carrega arquivos desses vídeos.
-    Se augment=True, aplica data augmentation simples (apenas no treino).
-    """
-
     def __init__(self, root_dir: Path, allowed_video_ids=None, augment: bool = False):
         self.root_dir = root_dir
         self.augment = augment
@@ -105,18 +84,9 @@ class ImageSequenceDataset(Dataset):
         return len(self.files)
 
     def _augment_video(self, video: torch.Tensor) -> torch.Tensor:
-        """
-        Aplica data augmentation simples na sequência:
-        - flip horizontal aleatório (INVERTER A IMAGEM na horizontal)
-        - ruído gaussiano leve
-
-        video: (seq_len, 1, 64, 64)
-        """
-        # Flip horizontal com prob 0.5 -> espelha o rosto (esquerda/direita)
         if torch.rand(1).item() < 0.5:
-            video = torch.flip(video, dims=[3])  # inverte eixo W (largura)
+            video = torch.flip(video, dims=[3]) 
 
-        # Ruído gaussiano leve com prob 0.5 -> altera textura/iluminação um pouquinho
         if torch.rand(1).item() < 0.5:
             noise = torch.randn_like(video) * 0.02
             video = video + noise
@@ -137,10 +107,6 @@ class ImageSequenceDataset(Dataset):
 
 
 class LSTMClassifier(nn.Module):
-    """
-    Modelo antigo: LSTM puro em cima das features (EAR, MAR, etc.)
-    Entrada: (batch, seq_len, input_size)
-    """
 
     def __init__(
         self,
@@ -151,7 +117,6 @@ class LSTMClassifier(nn.Module):
         dropout: float = 0.5
     ):
         super().__init__()
-        # LSTM mais profunda (2 camadas) e mais neurônios
         self.lstm = nn.LSTM(
             input_size=input_size,
             hidden_size=hidden_size,
@@ -173,41 +138,25 @@ class LSTMClassifier(nn.Module):
 
 
 class CNNLSTM(nn.Module):
-    """
-    Modelo novo: CNN + (Bi)LSTM em cima de sequências de imagens.
-    Entrada: (batch, seq_len, 1, 64, 64)
-    """
-
-    def __init__(
-        self,
-        feature_dim=128,   # mais dimensões de features
-        hidden_size=64,    # mais neurônios na LSTM
-        num_layers=2,      # LSTM com 2 camadas
-        num_classes=2,
-        dropout=0.5,
-        bidirectional=True
-    ):
+    def __init__( self, feature_dim=128, hidden_size=64, num_layers=2, num_classes=2, dropout=0.5, bidirectional=True):
         super().__init__()
-        # CNN mais profunda: 3 blocos conv + pool, aumentando canais
         self.cnn = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2),              # 64x64 -> 32x32
+            nn.MaxPool2d(2),             
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2),              # 32x32 -> 16x16
+            nn.MaxPool2d(2),             
             nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2),              # 16x16 -> 8x8
+            nn.MaxPool2d(2),        
         )
 
-        # 128 canais * 8 * 8 = 8192
         self.fc = nn.Linear(128 * 8 * 8, feature_dim)
         self.dropout = nn.Dropout(p=dropout)
         self.bidirectional = bidirectional
         num_directions = 2 if bidirectional else 1
 
-        # LSTM mais profunda (2 camadas) e maior
         self.lstm = nn.LSTM(
             input_size=feature_dim,
             hidden_size=hidden_size,
@@ -295,8 +244,6 @@ def main():
 
         sample_x, _ = dataset[0]
         seq_len, input_size = sample_x.shape
-        print(f"[FEATURES] seq_len={seq_len}, input_size={input_size}")
-
         model = LSTMClassifier(
             input_size=input_size,
             hidden_size=128,
