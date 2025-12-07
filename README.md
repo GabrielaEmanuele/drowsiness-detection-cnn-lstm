@@ -1,7 +1,5 @@
 # Detecção de Sonolência em Motoristas com CNN–LSTM
 
-Repositório relacionado ao Trabalho de Conclusão de Curso de Engenharia de Computação – UNIFEI (Itabira).
-
 ## Descrição
 
 - Detecção de sonolência a partir de sequências de frames faciais.
@@ -9,3 +7,10 @@ Repositório relacionado ao Trabalho de Conclusão de Curso de Engenharia de Com
 - Modelagem temporal com LSTM bidirecional.
 - Experimentos com o dataset UTA-RLDD.
 
+## Conteúdo do Repositório
+
+- Código de treinamento, validação e teste utilizando PyTorch.
+
+## Objetivo
+
+Disponibilizar o pipeline completo desenvolvido no TCC, permitindo reprodução dos experimentos, avaliação do modelo e execução do sistema em tempo real.
