@@ -10,7 +10,3 @@
 ## Conteúdo do Repositório
 
 - Código de treinamento, validação e teste utilizando PyTorch.
-
-## Objetivo
-
-Disponibilizar o pipeline completo desenvolvido no TCC, permitindo reprodução dos experimentos, avaliação do modelo e execução do sistema em tempo real.
