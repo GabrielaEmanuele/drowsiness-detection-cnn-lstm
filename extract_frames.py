@@ -10,22 +10,15 @@ VALID_EXT = (".mp4", ".avi", ".mov", ".mkv", ".MOV")
 
 
 def class_from_filename(fname: str):
-    """Mapeia nome do arquivo para rótulo binário.
-       0.mov  -> 0 (alerta)
-       10.MOV -> 1 (sonolento)
-       5.mov  -> None (ignoramos por enquanto)
-    """
     base = os.path.splitext(fname)[0]
     if base == "0":
         return 0
     if base.lower() == "10":
         return 1
-    return None  # 5 = baixa vigilância (fora da prática)
+    return None 
 
 
-def extract_frames_from_video(video_path: str, out_dir: str,
-                              fps_target: int = 10) -> int:
-    """Extrai frames com fps reduzido. Retorna número de frames salvos."""
+def extract_frames_from_video(video_path: str, out_dir: str, fps_target: int = 10) -> int:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"[ERRO] Não abriu {video_path}")
@@ -60,7 +53,6 @@ def main():
     for fold_name in ["Fold1_part1", "Fold1_part2"]:
         fold_path = os.path.join(VIDEO_ROOT, fold_name)
         if not os.path.isdir(fold_path):
-            print(f"[AVISO] Pasta não encontrada: {fold_path}")
             continue
 
         for participant_id in sorted(os.listdir(fold_path)):
@@ -74,7 +66,6 @@ def main():
 
                 label = class_from_filename(fname)
                 if label is None:
-                    # ignorando baixa vigilância por enquanto
                     continue
 
                 video_path = os.path.join(part_path, fname)
@@ -101,8 +92,6 @@ def main():
     with open(index_path, "w") as f:
         json.dump(index, f, indent=2)
 
-    print(f"\n[OK] Index salvo em {index_path}")
-    print(f"Total de vídeos processados: {len(index)}")
 
 
 if __name__ == "__main__":
