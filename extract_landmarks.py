@@ -13,10 +13,11 @@ os.makedirs(LANDMARKS_ROOT, exist_ok=True)
 def process_video_frames(video_id: str, n_frames: int):
     video_dir = os.path.join(FRAMES_ROOT, video_id)
     if not os.path.isdir(video_dir):
-        print(f"[ERRO] Pasta de frames não encontrada: {video_dir}")
+        print(f"Pasta de frames não encontrada: {video_dir}")
         return None
 
-    landmarks_list = []
+    landmarks_list = []    print("\n[OK] Landmarks salvos em", LANDMARKS_ROOT)
+
 
     with mp_face_mesh.FaceMesh(
         max_num_faces=1,
@@ -75,8 +76,6 @@ def main():
 
         # vamos guardar como array de objetos (alguns frames podem ser None)
         np.save(out_path, np.array(lm_list, dtype=object))
-
-    print("\n[OK] Landmarks salvos em", LANDMARKS_ROOT)
 
 
 if __name__ == "__main__":
