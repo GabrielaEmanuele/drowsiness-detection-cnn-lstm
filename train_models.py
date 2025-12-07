@@ -172,17 +172,17 @@ class CNNLSTM(nn.Module):
         # x: (batch, seq_len, 1, 64, 64)
         batch, seq_len, C, H, W = x.size()
         # junta batch e tempo pra passar a CNN por frame
-        x = x.view(batch * seq_len, C, H, W)  # (batch*seq_len, 1, 64, 64)
-        feats = self.cnn(x)                   # (batch*seq_len, 128, 8, 8)
+        x = x.view(batch * seq_len, C, H, W)
+        feats = self.cnn(x)               
         feats = feats.view(batch * seq_len, -1)
-        feats = self.fc(feats)                # (batch*seq_len, feature_dim)
+        feats = self.fc(feats)       
         feats = self.dropout(feats)
         # volta pra (batch, seq_len, feature_dim)
         feats = feats.view(batch, seq_len, -1)
-        lstm_out, _ = self.lstm(feats)        # (batch, seq_len, hidden*num_dirs)
-        last_hidden = lstm_out[:, -1, :]      # (batch, hidden*num_dirs)
+        lstm_out, _ = self.lstm(feats)
+        last_hidden = lstm_out[:, -1, :] 
         last_hidden = self.dropout(last_hidden)
-        logits = self.classifier(last_hidden) # (batch, num_classes)
+        logits = self.classifier(last_hidden)
         return logits
 
 
@@ -281,10 +281,6 @@ def main():
         val_ids = all_ids[n_train:n_train + n_val]
         test_ids = all_ids[n_train + n_val:]
 
-        print("Train videos:", sorted(train_ids))
-        print("Val videos:", sorted(val_ids))
-        print("Test videos:", sorted(test_ids))
-
         train_dataset = ImageSequenceDataset(SEQUENCES_IMG_DIR, allowed_video_ids=train_ids, augment=True)
         val_dataset = ImageSequenceDataset(SEQUENCES_IMG_DIR, allowed_video_ids=val_ids, augment=False)
         test_dataset = ImageSequenceDataset(SEQUENCES_IMG_DIR, allowed_video_ids=test_ids, augment=False)
@@ -344,7 +340,7 @@ def main():
             epochs_no_improve += 1
 
         if epochs_no_improve >= EARLY_STOP_PATIENCE:
-            print(f"\n[EARLY STOPPING] Parando na época {epoch} (sem melhoria em {EARLY_STOP_PATIENCE} épocas).")
+            print(f"\nParando na época {epoch} (sem melhoria em {EARLY_STOP_PATIENCE} épocas).")
             break
 
     if best_state is not None:
@@ -352,7 +348,7 @@ def main():
 
     if test_loader is not None:
         test_loss, test_acc = evaluate(model, test_loader, criterion, DEVICE)
-        print(f"[TEST] loss={test_loss:.4f} acc={test_acc:.3f}")
+        print(f"Test loss={test_loss:.4f} acc={test_acc:.3f}")
 
     model_dir = Path("..") / "model"
     model_dir.mkdir(exist_ok=True)
@@ -360,9 +356,9 @@ def main():
     out_path = model_dir / model_out_name
     if best_state is not None:
         torch.save(best_state, out_path)
-        print(f"\n[OK] Melhor modelo salvo em: {out_path}")
+        print(f"\nMelhor modelo salvo em: {out_path}")
     else:
-        print("\n[AVISO] Nenhum modelo melhor encontrado (??)")
+        print("\nNenhum modelo melhor encontrado (??)")
 
 
 if __name__ == "__main__":
